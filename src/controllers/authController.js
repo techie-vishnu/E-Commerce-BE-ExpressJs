@@ -6,22 +6,29 @@ const bcrypt = require('bcryptjs');
 
 exports.registerUser = async (req, res) => {
     try {
-        const { name, username, email, mobile, password } = req.body;
+        const { name, username, email, mobile, password, confirmPassword } = req.body;
         const user = await User.findOne({ $or: [{ username: username.trim() }, { email: email.trim() }] });
 
         if (user) {
-            // User Exists
-            return res.status(200).json({
+            let error = 'User exists';
+            if (user.username === username.trim() && user.email === email.trim()) {
+                error = 'Already registered user. Try login with username/email.';
+            } else if (user.username === username.trim()) {
+                error = 'Username already exists';
+            } else if (user.email === email.trim()) {
+                error = 'Email already registered. Try login with email.';
+            }
+            return res.status(405).json({
                 success: false,
-                error: 'User exists'
-            })
+                error: error
+            });
         } else {
             const hashedPwd = bcrypt.hashSync(password, 10);
             const user = new User({ name, username, email, mobile, password: hashedPwd });
             await user.save();
 
-            const token = jwt.sign({ data: { email: email } }, process.env.SECRET_KEY, { expiresIn: '1h' });
-            res.cookie('token', token);
+            // const token = jwt.sign({ data: { email: email } }, process.env.SECRET_KEY, { expiresIn: '1h' });
+            // res.cookie('token', token);
         }
 
         res.status(200).json({
@@ -42,9 +49,9 @@ exports.usernameExists = async (req, res) => {
         const user = User.findOne({ username: username.trim() });
 
         if (user) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
-                error: 'Username already used.'
+                error: 'Username already exists.'
             });
         } else {
             return res.status(200).json({
@@ -66,7 +73,7 @@ exports.emailExists = async (req, res) => {
         const user = User.findOne({ email: email.trim() });
 
         if (user) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 error: 'User registration exists with this email.'
             });
@@ -128,13 +135,15 @@ exports.login = async (req, res) => {
     }
 }
 
-exports.logout = async (req, res) => {
+exports.logout = (req, res) => {
     try {
         /* 
         You may want to perform additional
         cleanup or session invalidation here
         */
-        res.clearCookie('token').status(200).json({
+        res.clearCookie('token');
+        
+        return res.status(200).json({
             success: true,
             error: 'Logged out successfully'
         });
