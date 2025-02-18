@@ -23,9 +23,15 @@ const adminUser = (req, res, next) => {
             });
         }
 
-        req.user = verifiedUser.data;
-        
-        next();
+        if (verifiedUser.data.roles && Array.isArray(verifiedUser.data.roles) && verifiedUser.data.roles.includes("Admin")) {
+            req.user = verifiedUser.data;
+            next(); 
+        } else {
+            return res.status(401).json({
+                success: false,
+                error: "You have no access rights"
+            });
+        }
 
     } catch (error) {
         return res.status(401).json({

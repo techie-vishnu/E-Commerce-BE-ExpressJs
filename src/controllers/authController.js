@@ -92,7 +92,7 @@ exports.login = async (req, res) => {
         });
 
         if (!userExists) {
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
                 error: 'Username or password is wrong.'
             });
@@ -100,7 +100,7 @@ exports.login = async (req, res) => {
 
         const passwordMatch = bcrypt.compareSync(password, userExists.password);
         if (!passwordMatch) {
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
                 error: 'Username or password is wrong.'
             });
@@ -111,16 +111,19 @@ exports.login = async (req, res) => {
         userExists.last_login = Date.now();
         await userExists.save();
 
+        delete userExists.password;
+
         return res.status(200).json({
             success: true,
             message: 'Login successful',
             token,
-            userId: userExists._id
+            userId: userExists._id,
+            data: userExists
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            error: error.message
+            error: error.message || 'Authentication failed try Again'
         });
     }
 }
