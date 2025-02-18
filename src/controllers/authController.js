@@ -118,14 +118,21 @@ exports.login = async (req, res) => {
         userExists.last_login = Date.now();
         await userExists.save();
 
-        delete userExists.password;
+        const userData = {
+            id: userExists._id,
+            name: userExists.name,
+            username: userExists.username,
+            email: userExists.email,
+            mobile: userExists.mobile,
+            roles: userExists.roles
+        }
 
         return res.status(200).json({
             success: true,
             message: 'Login successful',
             token,
             userId: userExists._id,
-            data: userExists
+            data: userData
         });
     } catch (error) {
         return res.status(500).json({
