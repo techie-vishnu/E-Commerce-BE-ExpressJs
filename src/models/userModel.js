@@ -1,4 +1,6 @@
 const { default: mongoose } = require("mongoose");
+const validRoles = ['Admin', 'Customer'];
+
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -28,7 +30,14 @@ const userSchema = new mongoose.Schema({
     },
     roles: {
         type: [String],
-        default: ['customer']
+        default: ['Customer'],
+        enum: validRoles,
+        validate: {
+            validator: function (arr) {
+                return arr.every(role => validRoles.includes(role));
+            },
+            message: props => `${props.value} contains invalid role`
+        }
     },
     enabled: {
         type: Boolean,
